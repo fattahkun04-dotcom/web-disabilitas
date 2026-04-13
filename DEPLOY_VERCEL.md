@@ -15,12 +15,14 @@
 **Rekomendasi: Railway, PlanetScale, atau Aiven**
 
 #### Railway (Mudah & Gratis $5/bulan)
+
 1. Daftar di [railway.app](https://railway.app)
 2. Klik "New Project" → "Add a Database" → "Add MySQL"
 3. Copy connection string dari Railway
 4. Format: `mysql://user:password@host:port/database`
 
 #### PlanetScale (Gratis & Populer)
+
 1. Daftar di [planetscale.com](https://planetscale.com)
 2. Buat database baru
 3. Copy connection string dari "Connect" → "Prisma"
@@ -50,14 +52,14 @@
 
    ```
    DATABASE_URL=mysql://user:password@host:port/database
-   
+
    NEXTAUTH_SECRET=random-string-yang-panjang-dan-aman
    NEXTAUTH_URL=https://your-domain.vercel.app
-   
+
    CLOUDINARY_CLOUD_NAME=your-cloud-name
    CLOUDINARY_API_KEY=your-api-key
    CLOUDINARY_API_SECRET=your-api-secret
-   
+
    RESEND_API_KEY=your-resend-api-key
    RESEND_FROM_EMAIL=noreply@yourdomain.com
    ```
@@ -72,21 +74,25 @@
 ### Cara 2: Deploy via Vercel CLI
 
 1. **Install Vercel CLI**
+
    ```bash
    npm install -g vercel
    ```
 
 2. **Login ke Vercel**
+
    ```bash
    vercel login
    ```
 
 3. **Deploy (Preview)**
+
    ```bash
    vercel
    ```
 
 4. **Deploy ke Production**
+
    ```bash
    vercel --prod
    ```
@@ -128,6 +134,7 @@
 Setelah deploy, jalankan Prisma migration:
 
 ### Opsi A: Via Vercel Remote CLI
+
 ```bash
 vercel env pull .env.production
 npx prisma db push --schema=prisma/schema.prisma
@@ -136,17 +143,18 @@ npx prisma db push --schema=prisma/schema.prisma
 ### Opsi B: Via Script di Project (Recommended)
 
 Buat file `scripts/deploy-db.js`:
+
 ```javascript
-const { execSync } = require('child_process');
+const { execSync } = require("child_process");
 
 async function deployDatabase() {
-  console.log('🚀 Running Prisma migration...');
+  console.log("🚀 Running Prisma migration...");
   try {
-    execSync('npx prisma generate', { stdio: 'inherit' });
-    execSync('npx prisma db push', { stdio: 'inherit' });
-    console.log('✅ Database migration completed!');
+    execSync("npx prisma generate", { stdio: "inherit" });
+    execSync("npx prisma db push", { stdio: "inherit" });
+    console.log("✅ Database migration completed!");
   } catch (error) {
-    console.error('❌ Migration failed:', error.message);
+    console.error("❌ Migration failed:", error.message);
     process.exit(1);
   }
 }
@@ -155,6 +163,7 @@ deployDatabase();
 ```
 
 Jalankan lokal setelah set DATABASE_URL ke production:
+
 ```bash
 node scripts/deploy-db.js
 ```
@@ -192,24 +201,39 @@ Copy hasilnya dan paste ke `NEXTAUTH_SECRET` di Vercel.
 
 ## Environment Variables Lengkap
 
-| Variable | Deskripsi | Contoh |
-|----------|-----------|--------|
-| `DATABASE_URL` | Connection string database | `mysql://user:pass@host:3306/db` |
-| `NEXTAUTH_SECRET` | Secret key untuk autentikasi | `aHR0cHM6Ly93d3cueW91dHViZS5jb20=` |
-| `NEXTAUTH_URL` | URL aplikasi Anda | `https://your-app.vercel.app` |
-| `CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name | `dxxxxxxx` |
-| `CLOUDINARY_API_KEY` | Cloudinary API key | `123456789012345` |
-| `CLOUDINARY_API_SECRET` | Cloudinary API secret | `xxxxxxxxxxxxxxxxxxxx` |
-| `RESEND_API_KEY` | Resend email API key | `re_xxxxxxxxxxxxx` |
-| `RESEND_FROM_EMAIL` | Email pengirim | `noreply@yourdomain.com` |
+| Variable                | Deskripsi                    | Contoh                             |
+| ----------------------- | ---------------------------- | ---------------------------------- |
+| `DATABASE_URL`          | Connection string database   | `mysql://user:pass@host:3306/db`   |
+| `NEXTAUTH_SECRET`       | Secret key untuk autentikasi | `aHR0cHM6Ly93d3cueW91dHViZS5jb20=` |
+| `NEXTAUTH_URL`          | URL aplikasi Anda            | `https://your-app.vercel.app`      |
+| `CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name        | `dxxxxxxx`                         |
+| `CLOUDINARY_API_KEY`    | Cloudinary API key           | `123456789012345`                  |
+| `CLOUDINARY_API_SECRET` | Cloudinary API secret        | `xxxxxxxxxxxxxxxxxxxx`             |
+| `RESEND_API_KEY`        | Resend email API key         | `re_xxxxxxxxxxxxx`                 |
+| `RESEND_FROM_EMAIL`     | Email pengirim               | `noreply@yourdomain.com`           |
 
 ---
 
 ## Troubleshooting
 
+### ❌ Error: "RESEND_API_KEY environment variable is not set"
+
+**Sudah diatasi!** Aplikasi sekarang menggunakan lazy initialization untuk Resend client.
+
+- Build tidak akan gagal meskipun `RESEND_API_KEY` belum diisi
+- Email akan diskip jika API key belum dikonfigurasi
+- Setelah API key diisi, email akan otomatis aktif
+
+**Untuk mengaktifkan email:**
+
+1. Isi `RESEND_API_KEY` di Vercel Environment Variables
+2. Isi `RESEND_FROM_EMAIL` dengan email pengirim
+3. Redeploy aplikasi
+
 ### ❌ Error: "Can't reach database server"
 
 **Solusi:**
+
 - Pastikan `DATABASE_URL` benar
 - Pastikan database sudah online (bukan localhost)
 - Cek firewall/allowlist IP Vercel
@@ -221,6 +245,7 @@ Copy hasilnya dan paste ke `NEXTAUTH_SECRET` di Vercel.
 ### ❌ Error: "NEXTAUTH_SECRET is required"
 
 **Solusi:**
+
 - Generate secret baru
 - Paste ke Environment Variables Vercel
 - Redeploy
@@ -228,6 +253,7 @@ Copy hasilnya dan paste ke `NEXTAUTH_SECRET` di Vercel.
 ### ❌ Build berhasil tapi 500 error saat akses
 
 **Solusi:**
+
 - Cek Vercel Logs (Functions tab)
 - Pastikan semua env variables sudah terisi
 - Cek connection string database
@@ -235,6 +261,7 @@ Copy hasilnya dan paste ke `NEXTAUTH_SECRET` di Vercel.
 ### ❌ Email tidak terkirim
 
 **Solusi:**
+
 - Pastikan `RESEND_API_KEY` benar
 - Verifikasi domain di Resend dashboard
 - Cek spam folder
@@ -244,11 +271,13 @@ Copy hasilnya dan paste ke `NEXTAUTH_SECRET` di Vercel.
 ## Update Setelah Deploy
 
 Setiap kali push ke branch `main` (atau branch production):
+
 - Vercel otomatis deploy
 - Tunggu 2-5 menit
 - Update live! 🎉
 
 Untuk preview branch lain:
+
 - Push ke branch selain `main`
 - Vercel buat preview URL otomatis
 - Bisa test sebelum merge
