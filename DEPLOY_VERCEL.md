@@ -14,8 +14,8 @@
 
 **Rekomendasi: Railway, PlanetScale, atau Aiven**
 
-#### Railway (Mudah & Gratis $5/b
-ar di [railway.app](https://railway.app)
+#### Railway (Mudah & Gratis $5/bulan)
+1. Daftar di [railway.app](https://railway.app)
 2. Klik "New Project" → "Add a Database" → "Add MySQL"
 3. Copy connection string dari Railway
 4. Format: `mysql://user:password@host:port/database`

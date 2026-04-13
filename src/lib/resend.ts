@@ -1,12 +1,34 @@
 import { Resend } from "resend";
 
-export const resend = new Resend(process.env.RESEND_API_KEY);
+let _resend: Resend | null = null;
+
+function getResend(): Resend {
+  if (!_resend) {
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) {
+      console.warn("RESEND_API_KEY environment variable is not set - email functionality will not work");
+      // Return a dummy instance to prevent build errors
+      _resend = new Resend("re_dummy_key_for_build");
+    } else {
+      _resend = new Resend(apiKey);
+    }
+  }
+  return _resend;
+}
+
+export { getResend };
 
 export const sendVerificationEmail = async (
   email: string,
   name: string
 ) => {
   try {
+    if (!process.env.RESEND_API_KEY) {
+      console.warn("Skipping verification email - RESEND_API_KEY not configured");
+      return { success: true }; // Don't fail registration if email is not configured
+    }
+
+    const resend = getResend();
     await resend.emails.send({
       from:
         process.env.RESEND_FROM_EMAIL || "noreply@sahabatabk.com",
@@ -35,6 +57,12 @@ export const sendWelcomeEmail = async (
   name: string
 ) => {
   try {
+    if (!process.env.RESEND_API_KEY) {
+      console.warn("Skipping welcome email - RESEND_API_KEY not configured");
+      return { success: true };
+    }
+
+    const resend = getResend();
     await resend.emails.send({
       from:
         process.env.RESEND_FROM_EMAIL || "noreply@sahabatabk.com",
@@ -73,6 +101,12 @@ export const sendRSVPConfirmationEmail = async (
   eventDate: string
 ) => {
   try {
+    if (!process.env.RESEND_API_KEY) {
+      console.warn("Skipping RSVP email - RESEND_API_KEY not configured");
+      return { success: true };
+    }
+
+    const resend = getResend();
     await resend.emails.send({
       from:
         process.env.RESEND_FROM_EMAIL || "noreply@sahabatabk.com",
