@@ -1,0 +1,269 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── ENUMS ───────────────────────────────────────────────
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  MEMBER
+}
+
+enum MemberStatus {
+  PENDING
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum EventStatus {
+  DRAFT
+  PUBLISHED
+  COMPLETED
+  CANCELLED
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+enum TransactionCategory {
+  MEMBERSHIP_FEE
+  DONATION
+  EVENT_INCOME
+  EVENT_EXPENSE
+  OPERATIONAL
+  SOCIAL_PROGRAM
+  OTHER
+}
+
+// ─── USERS & MEMBERS ─────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  emailVerified DateTime?
+  passwordHash  String?
+  name          String
+  avatarUrl     String?
+  role          Role      @default(MEMBER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  member        Member?
+  threads       ForumThread[]
+  comments      ForumComment[]
+  reactions     ForumReaction[]
+  rsvps         EventRsvp[]
+
+  @@map("users")
+}
+
+model Member {
+  id                String       @id @default(cuid())
+  userId            String       @unique
+  user              User         @relation(fields: [userId], references: [id])
+
+  phone             String?
+  address           String?
+  city              String?
+  province          String?
+  joinedAt          DateTime     @default(now())
+  status            MemberStatus @default(PENDING)
+
+  // Data Anak (sensitif, opsional)
+  childName         String?
+  childBirthYear    Int?
+  specialNeedType   String?
+  specialNeedNotes  String?
+
+  verifiedAt        DateTime?
+  verifiedBy        String?
+
+  @@map("members")
+}
+
+// ─── EVENTS ──────────────────────────────────────────────
+
+model Event {
+  id            String      @id @default(cuid())
+  title         String
+  slug          String      @unique
+  description   String
+  coverImageUrl String?
+  location      String?
+  locationUrl   String?
+  startDate     DateTime
+  endDate       DateTime?
+  status        EventStatus @default(DRAFT)
+  category      String?
+  maxParticipants Int?
+  createdBy     String
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  documents     EventDocument[]
+  rsvps         EventRsvp[]
+
+  @@map("events")
+}
+
+model EventDocument {
+  id        String   @id @default(cuid())
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id])
+  type      String
+  url       String
+  caption   String?
+  uploadedAt DateTime @default(now())
+
+  @@map("event_documents")
+}
+
+model EventRsvp {
+  id        String   @id @default(cuid())
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([eventId, userId])
+  @@map("event_rsvps")
+}
+
+// ─── BUDGET / KEUANGAN ────────────────────────────────────
+
+model BudgetTransaction {
+  id            String              @id @default(cuid())
+  date          DateTime
+  type          TransactionType
+  category      TransactionCategory
+  description   String
+  amount        Decimal             @db.Decimal(14, 2)
+  attachmentUrl String?
+  isVerified    Boolean             @default(false)
+  verifiedBy    String?
+  eventId       String?
+  createdBy     String
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  @@map("budget_transactions")
+}
+
+// ─── FORUM ───────────────────────────────────────────────
+
+model ForumCategory {
+  id          String        @id @default(cuid())
+  name        String
+  slug        String        @unique
+  description String?
+  icon        String?
+  order       Int           @default(0)
+  threads     ForumThread[]
+
+  @@map("forum_categories")
+}
+
+model ForumThread {
+  id          String        @id @default(cuid())
+  title       String
+  content     String
+  categoryId  String
+  category    ForumCategory @relation(fields: [categoryId], references: [id])
+  authorId    String
+  author      User          @relation(fields: [authorId], references: [id])
+  isPinned    Boolean       @default(false)
+  isClosed    Boolean       @default(false)
+  viewCount   Int           @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  comments    ForumComment[]
+  reactions   ForumReaction[]
+
+  @@map("forum_threads")
+}
+
+model ForumComment {
+  id        String       @id @default(cuid())
+  content   String
+  threadId  String
+  thread    ForumThread  @relation(fields: [threadId], references: [id])
+  authorId  String
+  author    User         @relation(fields: [authorId], references: [id])
+  parentId  String?
+  parent    ForumComment? @relation("Replies", fields: [parentId], references: [id])
+  replies   ForumComment[] @relation("Replies")
+  isDeleted Boolean      @default(false)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@map("forum_comments")
+}
+
+model ForumReaction {
+  id        String      @id @default(cuid())
+  threadId  String
+  thread    ForumThread @relation(fields: [threadId], references: [id])
+  userId    String
+  user      User        @relation(fields: [userId], references: [id])
+  type      String      @default("like")
+
+  @@unique([threadId, userId])
+  @@map("forum_reactions")
+}
+
+// ─── NOTIFICATIONS ───────────────────────────────────────
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  linkUrl   String?
+  createdAt DateTime @default(now())
+
+  @@map("notifications")
+}
+
+// ─── SYSTEM ──────────────────────────────────────────────
+
+model OrganizationProfile {
+  id            String   @id @default(cuid())
+  name          String
+  tagline       String?
+  vision        String?
+  mission       String?
+  history       String?
+  logoUrl       String?
+  coverUrl      String?
+  address       String?
+  email         String?
+  phone         String?
+  foundedYear   Int?
+  updatedAt     DateTime @updatedAt
+
+  @@map("organization_profile")
+}
+
+model BoardMember {
+  id        String   @id @default(cuid())
+  name      String
+  position  String
+  photoUrl  String?
+  period    String?
+  order     Int      @default(0)
+
+  @@map("board_members")
+}

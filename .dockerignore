@@ -1,0 +1,14 @@
+node_modules
+.next
+.env
+.env.local
+*.tsbuildinfo
+.git
+.gitignore
+.vscode
+.idea
+*.md
+docker-compose*.yml
+Dockerfile
+.dockerignore
+prisma/migrations
